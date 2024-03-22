@@ -16,4 +16,5 @@ public interface UserService extends UserDetailsService {
     UserDTO getAuthenticatedProfile();
     UserDTO getProfile(String username);
     BatchInsertionResponseDTO batchInsertUsers(InputStream inputStream);
+    String generateRandomUserData(int count);
 }
