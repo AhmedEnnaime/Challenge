@@ -2,6 +2,7 @@ package com.youcode.test.controllers;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.youcode.test.models.dto.BatchInsertionResponseDTO;
 import com.youcode.test.models.dto.UserDTO;
 import com.youcode.test.models.entities.User;
 import com.youcode.test.services.UserService;
@@ -27,38 +28,16 @@ public class UserController {
     private final ObjectMapper objectMapper;
 
     @PostMapping(path = "/batch", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<Map<String, Integer>> batchInsertUsers(@RequestPart("file") MultipartFile file) {
-        ObjectMapper mapper = new ObjectMapper();
-        TypeReference<List<User>> typeReference = new TypeReference<List<User>>() {};
-
+    public ResponseEntity<BatchInsertionResponseDTO> batchInsertUsers(@RequestPart("file") MultipartFile file) {
         try {
-            InputStream inputStream = file.getInputStream();
-            List<User> users = mapper.readValue(inputStream, typeReference);
-            int successfullyInserted = 0;
-            int failedToInsert = 0;
-
-            for (User user : users) {
-                try {
-                    userService.save(Collections.singletonList(user));
-                    successfullyInserted++;
-                } catch (Exception e) {
-                    failedToInsert++;
-                    e.printStackTrace();
-                }
-            }
-
-            Map<String, Integer> response = new HashMap<>();
-            response.put("successfully_inserted", successfullyInserted);
-            response.put("failed_to_insert", failedToInsert);
-
+            BatchInsertionResponseDTO response = userService.batchInsertUsers(file.getInputStream());
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
         } catch (IOException e) {
             e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Collections.singletonMap("message", -1));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new BatchInsertionResponseDTO(0, -1));
         }
     }
-
-
 
     @GetMapping("/me")
     public ResponseEntity<UserDTO> getMe() {

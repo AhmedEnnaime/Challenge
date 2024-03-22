@@ -1,8 +1,11 @@
 package com.youcode.test.services.impl;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.youcode.test.exceptions.ResourceNotFoundException;
 import com.youcode.test.models.dto.AuthRequestDTO;
 import com.youcode.test.models.dto.AuthResponseDTO;
+import com.youcode.test.models.dto.BatchInsertionResponseDTO;
 import com.youcode.test.models.dto.UserDTO;
 import com.youcode.test.models.entities.User;
 import com.youcode.test.repositories.UserRepository;
@@ -22,6 +25,8 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.Collections;
 import java.util.List;
 
@@ -84,8 +89,29 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public Iterable<User> save(List<User> users) {
-        return userRepository.saveAll(users);
+    public BatchInsertionResponseDTO batchInsertUsers(InputStream inputStream) {
+        ObjectMapper mapper = new ObjectMapper();
+        TypeReference<List<User>> typeReference = new TypeReference<List<User>>() {};
+
+        try {
+            List<User> users = mapper.readValue(inputStream, typeReference);
+            int successfullyInserted = 0;
+            int failedToInsert = 0;
+
+            for (User user : users) {
+                try {
+                    userRepository.save(user);
+                    successfullyInserted++;
+                } catch (Exception e) {
+                    failedToInsert++;
+                    e.printStackTrace();
+                }
+            }
+            return new BatchInsertionResponseDTO(successfullyInserted, failedToInsert);
+        } catch (IOException e) {
+            e.printStackTrace();
+            return new BatchInsertionResponseDTO(0, -1);
+        }
     }
 
 }
