@@ -7,7 +7,9 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.AllArgsConstructor;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.AuthorityUtils;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
@@ -34,7 +36,7 @@ public class JWTAuthFilter extends OncePerRequestFilter {
             token = authHeader.substring(7);
             username = jwtService.extractUsername(token);
         }
-//        SecurityContextHolder.getContext().setAuthentication(null);
+
         if(username != null){
             UserDetails userDetails = userServiceImpl.loadUserByUsername(username);
             if(jwtService.validateToken(token, userDetails)){
@@ -42,8 +44,12 @@ public class JWTAuthFilter extends OncePerRequestFilter {
                 authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(authenticationToken);
             }
+        } else {
+            // If username is null, there's no authentication, so set an anonymous authentication
+            SecurityContextHolder.getContext().setAuthentication(new AnonymousAuthenticationToken("Anonymous", "Anonymous", AuthorityUtils.createAuthorityList("ROLE_ANONYMOUS")));
         }
-        System.out.println("retrieve username:"+ SecurityHelpers.retrieveUsername());
+
         filterChain.doFilter(request, response);
     }
+
 }
