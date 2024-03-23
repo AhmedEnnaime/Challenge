@@ -1,8 +1,12 @@
 package com.youcode.test.services.impl;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.youcode.test.exceptions.ResourceNotFoundException;
 import com.youcode.test.models.dto.AuthRequestDTO;
 import com.youcode.test.models.dto.AuthResponseDTO;
+import com.youcode.test.models.dto.BatchInsertionResponseDTO;
 import com.youcode.test.models.dto.UserDTO;
 import com.youcode.test.models.entities.User;
 import com.youcode.test.models.enums.ROLE;
@@ -29,12 +33,15 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.*;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Optional;
 
 @ExtendWith(MockitoExtension.class)
@@ -47,6 +54,8 @@ public class UserServiceImplTest {
     private ModelMapper modelMapper;
     @Mock
     private PasswordEncoder passwordEncoder;
+    @Mock
+    private ObjectMapper objectMapper;
     @InjectMocks
     private UserServiceImpl userService;
     private User user;
@@ -165,7 +174,48 @@ public class UserServiceImplTest {
         UserDTO result = userService.getProfile("john_doe");
        assertThat(result).isNotNull();
     }
+//    @Test
+//    @DisplayName("Test generateRandomUserData method")
+//    public void testGenerateRandomUserData() {
+//        int count = 5;
+//        String jsonData = userService.generateRandomUserData(count);
+//
+//        List<User> generatedUsers = null;
+//        try {
+//            generatedUsers = objectMapper.readValue(jsonData, new TypeReference<List<User>>() {});
+//        } catch (JsonProcessingException e) {
+//            e.printStackTrace();
+//        }
+//        assertNotNull(generatedUsers);
+//        assertEquals(count, generatedUsers.size());
+//    }
 
+
+//    @Test
+//    @DisplayName("Test batchInsertUsers method")
+//    public void testBatchInsertUsers() throws IOException {
+//        List<User> users = new ArrayList<>();
+//        users.add(createUser("user1", "John", "Doe"));
+//        users.add(createUser("user2", "Jane", "Smith"));
+//
+//        String jsonInput = "[{\"username\":\"user1\",\"firstName\":\"John\",\"lastName\":\"Doe\"},{\"username\":\"user2\",\"firstName\":\"Jane\",\"lastName\":\"Smith\"}]";
+//        ByteArrayInputStream inputStream = new ByteArrayInputStream(jsonInput.getBytes());
+//
+//        when(userRepository.saveAll(users)).thenReturn(users);
+//        BatchInsertionResponseDTO response = userService.batchInsertUsers(inputStream);
+//
+//        verify(userRepository, times(1)).saveAll(users);
+//        assertEquals(users.size(), response.getSuccessfullyInsertedRows());
+//        assertEquals(0, response.getFailedToInsertRows());
+//    }
+
+//    private User createUser(String username, String firstName, String lastName) {
+//        return User.builder()
+//                .username(username)
+//                .firstName(firstName)
+//                .lastName(lastName)
+//                .build();
+//    }
 //    @Test
 //    @DisplayName("Test getAuthenticatedProfile method")
 //    public void testGetAuthenticatedProfile() {
