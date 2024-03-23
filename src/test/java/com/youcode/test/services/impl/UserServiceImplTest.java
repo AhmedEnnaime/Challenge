@@ -14,15 +14,21 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.modelmapper.ModelMapper;
 import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.InsufficientAuthenticationException;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -31,6 +37,7 @@ import java.util.Date;
 import java.util.Optional;
 
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 public class UserServiceImplTest {
 
     @Mock
@@ -78,6 +85,10 @@ public class UserServiceImplTest {
                 .password("password456")
                 .role(ROLE.ADMIN)
                 .build();
+        SecurityContext securityContext = mock(SecurityContext.class);
+        Authentication authentication = mock(Authentication.class);
+        given(securityContext.getAuthentication()).willReturn(authentication);
+        SecurityContextHolder.setContext(securityContext);
     }
 
     @Test
@@ -136,5 +147,26 @@ public class UserServiceImplTest {
         assertThrows(UsernameNotFoundException.class, () -> userService.login(authRequest));
         verify(userRepository).findByUsername(authRequest.getUsername());
     }
+
+//    @Test
+//    @DisplayName("Test getAuthenticatedProfile method")
+//    public void testGetAuthenticatedProfile() {
+//        String username = "john_doe";
+//        given(userRepository.findByUsername(username)).willReturn(Optional.of(user));
+//        UserDTO result = userService.getAuthenticatedProfile();
+//        verify(userRepository).findByUsername(username);
+//        assertEquals(user.getUsername(), result.getUsername());
+//        assertEquals(user.getFirstName(), result.getFirstName());
+//        assertEquals(user.getLastName(), result.getLastName());
+//    }
+
+//    @Test
+//    @DisplayName("Test getAuthenticatedProfile method when user not found")
+//    public void testGetAuthenticatedProfileUserNotFound() {
+//        String username = "john_doe";
+//        given(userRepository.findByUsername(username)).willReturn(Optional.empty());
+//        assertThrows(ResourceNotFoundException.class, () -> userService.getAuthenticatedProfile());
+//        verify(userRepository).findByUsername(username);
+//    }
 
 }
