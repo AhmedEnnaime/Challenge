@@ -13,6 +13,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.modelmapper.ModelMapper;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 
 import static org.mockito.BDDMockito.given;
@@ -88,6 +90,18 @@ public class UserServiceImplTest {
         given(userRepository.findByUsername(username)).willReturn(Optional.empty());
         assertThrows(UsernameNotFoundException.class, () -> userService.findByUsername(username));
         verify(userRepository).findByUsername(username);
+    }
+
+    @Test
+    @DisplayName("Test loadUserByUsername method when the user is enabled")
+    public void testLoadUserByUsernameSuccess() {
+        String username = "john_doe";
+        given(userRepository.findByUsername(username)).willReturn(Optional.of(user));
+        UserDetails userDetails = userService.loadUserByUsername(username);
+        verify(userRepository).findByUsername(username);
+        assertThat(userDetails).isNotNull();
+        assertThat(userDetails.getUsername()).isEqualTo(user.getUsername());
+        assertThat(userDetails.getPassword()).isEqualTo(user.getPassword());
     }
 
 }
