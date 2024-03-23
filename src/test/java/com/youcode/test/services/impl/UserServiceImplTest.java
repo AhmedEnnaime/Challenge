@@ -1,6 +1,8 @@
 package com.youcode.test.services.impl;
 
 import com.youcode.test.exceptions.ResourceNotFoundException;
+import com.youcode.test.models.dto.AuthRequestDTO;
+import com.youcode.test.models.dto.AuthResponseDTO;
 import com.youcode.test.models.dto.UserDTO;
 import com.youcode.test.models.entities.User;
 import com.youcode.test.models.enums.ROLE;
@@ -14,9 +16,11 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.modelmapper.ModelMapper;
 import org.springframework.security.authentication.DisabledException;
+import org.springframework.security.authentication.InsufficientAuthenticationException;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
@@ -33,6 +37,8 @@ public class UserServiceImplTest {
     private UserRepository userRepository;
     @Mock
     private ModelMapper modelMapper;
+    @Mock
+    private PasswordEncoder passwordEncoder;
     @InjectMocks
     private UserServiceImpl userService;
     private User user;
@@ -111,6 +117,24 @@ public class UserServiceImplTest {
         given(userRepository.findByUsername(username)).willReturn(Optional.empty());
         assertThrows(UsernameNotFoundException.class, () -> userService.loadUserByUsername(username));
         verify(userRepository).findByUsername(username);
+    }
+
+    @Test
+    @DisplayName("Test login method with incorrect password")
+    public void testLoginWithIncorrectPassword() {
+        AuthRequestDTO authRequest = new AuthRequestDTO("john_doe", "incorrect_password");
+        given(userRepository.findByUsername(authRequest.getUsername())).willReturn(Optional.of(user));
+        assertThrows(InsufficientAuthenticationException.class, () -> userService.login(authRequest));
+        verify(userRepository).findByUsername(authRequest.getUsername());
+    }
+
+    @Test
+    @DisplayName("Test login method with non-existing username")
+    public void testLoginWithNonExistingUsername() {
+        AuthRequestDTO authRequest = new AuthRequestDTO("non_existing_user", "password123");
+        given(userRepository.findByUsername(authRequest.getUsername())).willReturn(Optional.empty());
+        assertThrows(UsernameNotFoundException.class, () -> userService.login(authRequest));
+        verify(userRepository).findByUsername(authRequest.getUsername());
     }
 
 }
