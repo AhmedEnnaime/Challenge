@@ -82,7 +82,6 @@ public class UserServiceImpl implements UserService {
         return mapper.map(retrievedUser, UserDTO.class);
     }
 
-    @PreAuthorize("hasAuthority('ADMIN')")
     @Override
     public UserDTO getProfile(String username) {
         User retrievedUser = userRepository.findByUsername(username)

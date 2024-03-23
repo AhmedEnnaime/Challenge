@@ -27,6 +27,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -146,6 +147,23 @@ public class UserServiceImplTest {
         given(userRepository.findByUsername(authRequest.getUsername())).willReturn(Optional.empty());
         assertThrows(UsernameNotFoundException.class, () -> userService.login(authRequest));
         verify(userRepository).findByUsername(authRequest.getUsername());
+    }
+
+    @Test
+    @DisplayName("Test getProfile method when user does not exist")
+    public void testGetProfileUserNotFound() {
+        String username = "non_existing_user";
+        given(userRepository.findByUsername(username)).willReturn(Optional.empty());
+        assertThrows(ResourceNotFoundException.class, () -> userService.getProfile(username));
+    }
+
+    @Test
+    @DisplayName("Test getProfile method when user exists")
+    public void testGetProfileUserExists() {
+        given(userRepository.findByUsername(anyString())).willReturn(Optional.of(user));
+        given(modelMapper.map(user, UserDTO.class)).willReturn(userDTO);
+        UserDTO result = userService.getProfile("john_doe");
+       assertThat(result).isNotNull();
     }
 
 //    @Test
