@@ -11,6 +11,7 @@ import com.youcode.test.models.dto.UserDTO;
 import com.youcode.test.models.entities.User;
 import com.youcode.test.models.enums.ROLE;
 import com.youcode.test.repositories.UserRepository;
+import com.youcode.test.utils.SecurityHelpers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -30,6 +31,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.test.context.support.WithMockUser;
 
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
@@ -39,10 +41,8 @@ import static org.mockito.Mockito.*;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
+import java.io.InputStream;
+import java.util.*;
 
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
@@ -56,6 +56,8 @@ public class UserServiceImplTest {
     private PasswordEncoder passwordEncoder;
     @Mock
     private ObjectMapper objectMapper;
+    @Mock
+    private SecurityHelpers securityHelpers;
     @InjectMocks
     private UserServiceImpl userService;
     private User user;
@@ -174,67 +176,48 @@ public class UserServiceImplTest {
         UserDTO result = userService.getProfile("john_doe");
        assertThat(result).isNotNull();
     }
-//    @Test
-//    @DisplayName("Test generateRandomUserData method")
-//    public void testGenerateRandomUserData() {
-//        int count = 5;
-//        String jsonData = userService.generateRandomUserData(count);
-//
-//        List<User> generatedUsers = null;
-//        try {
-//            generatedUsers = objectMapper.readValue(jsonData, new TypeReference<List<User>>() {});
-//        } catch (JsonProcessingException e) {
-//            e.printStackTrace();
-//        }
-//        assertNotNull(generatedUsers);
-//        assertEquals(count, generatedUsers.size());
-//    }
 
+    @Test
+    @DisplayName("Test getAuthenticatedProfile method")
+    public void testGetAuthenticatedProfile() {
+        UserDetails userDetails = mock(UserDetails.class);
+        when(userDetails.getUsername()).thenReturn("john_doe");
+        Authentication authentication = mock(Authentication.class);
+        when(authentication.getPrincipal()).thenReturn(userDetails);
+        SecurityContext securityContext = mock(SecurityContext.class);
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        SecurityContextHolder.setContext(securityContext);
+        given(userRepository.findByUsername("john_doe")).willReturn(Optional.of(user));
+        given(modelMapper.map(user, UserDTO.class)).willReturn(userDTO);
+        UserDTO result = userService.getAuthenticatedProfile();
+        assertThat(result).isNotNull();
+    }
 
-//    @Test
-//    @DisplayName("Test batchInsertUsers method")
-//    public void testBatchInsertUsers() throws IOException {
-//        List<User> users = new ArrayList<>();
-//        users.add(createUser("user1", "John", "Doe"));
-//        users.add(createUser("user2", "Jane", "Smith"));
-//
-//        String jsonInput = "[{\"username\":\"user1\",\"firstName\":\"John\",\"lastName\":\"Doe\"},{\"username\":\"user2\",\"firstName\":\"Jane\",\"lastName\":\"Smith\"}]";
-//        ByteArrayInputStream inputStream = new ByteArrayInputStream(jsonInput.getBytes());
-//
-//        when(userRepository.saveAll(users)).thenReturn(users);
-//        BatchInsertionResponseDTO response = userService.batchInsertUsers(inputStream);
-//
-//        verify(userRepository, times(1)).saveAll(users);
-//        assertEquals(users.size(), response.getSuccessfullyInsertedRows());
-//        assertEquals(0, response.getFailedToInsertRows());
-//    }
+    @Test
+    @DisplayName("Test getAuthenticatedProfile method when user does not exist")
+    public void testGetAuthenticatedProfileUserNotFound() {
+        String username = "non_existing_user";
+        when(SecurityHelpers.retrieveUsername()).thenReturn(username);
+        given(userRepository.findByUsername(username)).willReturn(Optional.empty());
+        assertThrows(ResourceNotFoundException.class, () -> userService.getAuthenticatedProfile());
+    }
 
-//    private User createUser(String username, String firstName, String lastName) {
-//        return User.builder()
-//                .username(username)
-//                .firstName(firstName)
-//                .lastName(lastName)
-//                .build();
-//    }
-//    @Test
-//    @DisplayName("Test getAuthenticatedProfile method")
-//    public void testGetAuthenticatedProfile() {
-//        String username = "john_doe";
-//        given(userRepository.findByUsername(username)).willReturn(Optional.of(user));
-//        UserDTO result = userService.getAuthenticatedProfile();
-//        verify(userRepository).findByUsername(username);
-//        assertEquals(user.getUsername(), result.getUsername());
-//        assertEquals(user.getFirstName(), result.getFirstName());
-//        assertEquals(user.getLastName(), result.getLastName());
-//    }
+    @Test
+    @DisplayName("Test batchInsertUsers method")
+    public void testBatchInsertUsers() throws IOException {
+        String jsonData = "[{\"username\":\"user1\", \"password\":\"pass1\"}, {\"username\":\"user2\", \"password\":\"pass2\"}]";
+        ByteArrayInputStream inputStream = new ByteArrayInputStream(jsonData.getBytes());
+        List<User> users = Arrays.asList(
+                User.builder().username("user1").password("pass1").build(),
+                User.builder().username("user2").password("pass2").build()
+        );
+        when(objectMapper.readValue(any(InputStream.class), any(TypeReference.class))).thenReturn(users);
+        when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        BatchInsertionResponseDTO response = userService.batchInsertUsers(inputStream);
+        assertEquals(2, response.getSuccessfullyInsertedRows());
+        assertEquals(0, response.getFailedToInsertRows());
+        verify(userRepository, times(2)).save(any(User.class));
+    }
 
-//    @Test
-//    @DisplayName("Test getAuthenticatedProfile method when user not found")
-//    public void testGetAuthenticatedProfileUserNotFound() {
-//        String username = "john_doe";
-//        given(userRepository.findByUsername(username)).willReturn(Optional.empty());
-//        assertThrows(ResourceNotFoundException.class, () -> userService.getAuthenticatedProfile());
-//        verify(userRepository).findByUsername(username);
-//    }
 
 }
