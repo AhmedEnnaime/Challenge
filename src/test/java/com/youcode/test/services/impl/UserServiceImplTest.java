@@ -11,6 +11,7 @@ import com.youcode.test.models.dto.UserDTO;
 import com.youcode.test.models.entities.User;
 import com.youcode.test.models.enums.ROLE;
 import com.youcode.test.repositories.UserRepository;
+import com.youcode.test.security.JWTService;
 import com.youcode.test.utils.SecurityHelpers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -57,7 +58,7 @@ public class UserServiceImplTest {
     @Mock
     private ObjectMapper objectMapper;
     @Mock
-    private SecurityHelpers securityHelpers;
+    private JWTService jwtService;
     @InjectMocks
     private UserServiceImpl userService;
     private User user;
@@ -102,6 +103,23 @@ public class UserServiceImplTest {
         given(securityContext.getAuthentication()).willReturn(authentication);
         SecurityContextHolder.setContext(securityContext);
     }
+
+    @Test
+    @DisplayName("Test login method with correct credentials")
+    public void testLoginWithCorrectCredentials() {
+        user = User.builder()
+                .username("john_doe")
+                .password("$2a$10$GZ9bzNmrte3HXXvbHyOnoOC.NL7H4VLco9rOyBI2e1YJ22eQkL15u")
+                .role(ROLE.USER)
+                .build();
+        given(userRepository.findByUsername("john_doe")).willReturn(java.util.Optional.of(user));
+        given(passwordEncoder.matches("password123", user.getPassword())).willReturn(true);
+        given(jwtService.GenerateToken(user)).willReturn("sample_token");
+        AuthRequestDTO authRequest = new AuthRequestDTO("john_doe", "password123");
+        AuthResponseDTO authResponse = userService.login(authRequest);
+        assertEquals("USER", authResponse.getRole());
+    }
+
 
     @Test
     @DisplayName("Test findByUsername method when the username is valid")
@@ -219,5 +237,29 @@ public class UserServiceImplTest {
         verify(userRepository, times(2)).save(any(User.class));
     }
 
+    private List<User> generateMockUsers(int count) {
+        Random random = new Random();
+        List<User> users = new ArrayList<>();
+
+        for (int i = 0; i < count; i++) {
+            User user = User.builder()
+                    .firstName("user" + (i + 1) + "First")
+                    .lastName("user" + (i + 1) + "Last")
+                    .city("user" + (i + 1) + "City")
+                    .country("user" + (i + 1) + "Country")
+                    .avatar("avatar_url_" + i)
+                    .company("user" + (i + 1) + "Company")
+                    .jobPosition("user" + (i + 1) + "Position")
+                    .mobile(String.valueOf(1111111111 + i))
+                    .username("user" + i)
+                    .email("user" + i + "@example.com")
+                    .password("password" + i)
+                    .role(ROLE.values()[random.nextInt(ROLE.values().length)])
+                    .build();
+            users.add(user);
+        }
+
+        return users;
+    }
 
 }
