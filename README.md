@@ -6,7 +6,7 @@ This is a technical assignment
 
 ## API Reference
 
-#### Batch Insert of users into db from json file
+#### Login
 
 ```http
   POST /api/auth
