@@ -8,7 +8,6 @@ import com.youcode.test.models.entities.User;
 import org.springframework.security.core.userdetails.UserDetailsService;
 
 import java.io.InputStream;
-import java.util.List;
 
 public interface UserService extends UserDetailsService {
     User findByUsername(String username);
