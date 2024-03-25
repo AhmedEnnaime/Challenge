@@ -32,21 +32,22 @@ public class JWTAuthFilter extends OncePerRequestFilter {
         String authHeader = request.getHeader("Authorization");
         String token = null;
         String username = null;
+        System.out.println("inside filter");
+        if(authHeader == null || !authHeader.startsWith("Bearer ")){
+            filterChain.doFilter(request, response);
+            return;
+        }
         if(authHeader != null && authHeader.startsWith("Bearer ")){
             token = authHeader.substring(7);
             username = jwtService.extractUsername(token);
         }
-
-        if(username != null){
+        if(username != null && SecurityContextHolder.getContext().getAuthentication() == null){
             UserDetails userDetails = userServiceImpl.loadUserByUsername(username);
             if(jwtService.validateToken(token, userDetails)){
                 UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
                 authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(authenticationToken);
             }
-        } else {
-            // If username is null, there's no authentication, so set an anonymous authentication
-            SecurityContextHolder.getContext().setAuthentication(new AnonymousAuthenticationToken("Anonymous", "Anonymous", AuthorityUtils.createAuthorityList("ROLE_ANONYMOUS")));
         }
 
         filterChain.doFilter(request, response);

@@ -1,21 +1,7 @@
 
-# Challenge
-
-This is a technical assignment
-
+# Technical Test Using SpringBoot
 
 ## API Reference
-
-#### Login
-
-```http
-  POST /api/auth
-```
-
-| Parameter | Type     | Description                       |
-| :-------- | :------- | :-------------------------------- |
-| `username`      | `string` | **Required**. username of user |
-| `password`      | `string` | **Required**. password of user |
 
 #### Get info of authenticated user
 
@@ -38,6 +24,18 @@ This is a technical assignment
 | `username` | `string` | username of user |
 | `email` | `string` | email of user |
 | `role` | `string` | role of user |
+
+#### Authentication
+
+```http
+  POST /api/auth
+```
+
+| Parameter | Type     | Description                       |
+| :-------- | :------- | :-------------------------------- |
+| `username`      | `string` | **Required**. username of user |
+| `password`      | `string` | **Required**. password of user |
+
 
 #### Get info of a specific user
 
